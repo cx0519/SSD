@@ -1,0 +1,746 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Play, Pause, RotateCcw, BookOpen, Brain, 
+  Calculator as CalcIcon, Languages, Award, 
+  Settings, Lock, X, Check, Coffee, ChevronRight,
+  TrendingUp, AlertTriangle, Timer, Watch,
+  Dumbbell, Briefcase, PenTool, MoreHorizontal
+} from 'lucide-react';
+
+// --- Components ---
+
+// 1. Onboarding Component
+const Onboarding = ({ onComplete }) => {
+  const [step, setStep] = useState(0); // 0: Activity Select, 1-4: Details
+  const [customActivity, setCustomActivity] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    activityType: '', // 'study', 'sport', 'work', 'other'
+    activityName: '', // Display name (e.g., '讀書', '重訓', '寫扣')
+    bestSubject: '',
+    worstSubject: '',
+    frustratedSubject: '', 
+    focusTime: 25,
+  });
+
+  const handleActivitySelect = (type, name) => {
+    if (type === 'other') {
+      setShowCustomInput(true);
+      setFormData({ ...formData, activityType: type });
+    } else {
+      setFormData({ ...formData, activityType: type, activityName: name });
+      setStep(1);
+    }
+  };
+
+  const handleCustomSubmit = () => {
+    if (customActivity.trim()) {
+      setFormData({ ...formData, activityName: customActivity });
+      setStep(1);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const nextStep = () => {
+    if (step < 4) setStep(step + 1);
+    else onComplete(formData);
+  };
+
+  // Dynamic Questions based on Activity Type
+  const getQuestions = () => {
+    const { activityType, activityName } = formData;
+    
+    // Default (Study)
+    let texts = {
+      best: { label: '✨ 你最擅長/喜歡的科目是？', placeholder: 'ex: 國文、歷史', desc: '我們會把它排在開始與結束，讓你心情愉悅。' },
+      frust: { label: '💀 最讓你感到挫折/想逃避的科目？', placeholder: 'ex: 數學、物理', desc: '這個大魔王我們會切碎它，讓你分段擊破。' },
+      worst: { label: '💤 覺得無聊或是比較不拿手的科目？', placeholder: 'ex: 英文單字', desc: '我們會穿插在中間。' }
+    };
+
+    if (activityType === 'sport') {
+      texts = {
+        best: { label: '🧘 喜歡的熱身/收操動作？', placeholder: 'ex: 拉筋、慢跑', desc: '用輕鬆的動作開始與結束。' },
+        frust: { label: '🔥 最累/核心的訓練項目？', placeholder: 'ex: 波比跳、深蹲', desc: '這是今天的重頭戲，我們會分段完成。' },
+        worst: { label: '💤 比較枯燥的基礎/輔助訓練？', placeholder: 'ex: 平板支撐', desc: '穿插在中間調節體力。' }
+      };
+    } else if (activityType === 'work' || activityType === 'other') {
+      texts = {
+        best: { label: `✨ ${activityName}中最順手/簡單的任務？`, placeholder: 'ex: 回信、整理資料', desc: '先進入心流狀態，建立信心。' },
+        frust: { label: `💀 最燒腦/複雜的${activityName}任務？`, placeholder: 'ex: 寫報告、Debug', desc: '將大任務拆解，避免拖延。' },
+        worst: { label: '💤 比較瑣碎/例行性的事項？', placeholder: 'ex: 填表單、備份', desc: '用來轉換心情。' }
+      };
+    }
+
+    return [
+      {
+        key: 'bestSubject',
+        label: texts.best.label,
+        placeholder: texts.best.placeholder,
+        desc: texts.best.desc
+      },
+      {
+        key: 'frustratedSubject',
+        label: texts.frust.label,
+        placeholder: texts.frust.placeholder,
+        desc: texts.frust.desc
+      },
+      {
+        key: 'worstSubject',
+        label: texts.worst.label,
+        placeholder: texts.worst.placeholder,
+        desc: texts.worst.desc
+      },
+      {
+        key: 'focusTime',
+        label: '⏱️ 你覺得自己單次最高專注力大概多久？',
+        placeholder: '25',
+        type: 'number',
+        desc: '別高估自己！誠實面對，我們不強求。 (分鐘)'
+      }
+    ];
+  };
+
+  // Render Step 0: Activity Selection
+  if (step === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-6 animate-fadeIn">
+         <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 p-8 rounded-3xl shadow-2xl">
+           <h2 className="text-2xl font-bold text-white mb-2 text-center">今天準備做什麼？</h2>
+           <p className="text-zinc-400 text-sm mb-8 text-center">選擇你的戰場，我們會為你準備專屬計畫。</p>
+           
+           {!showCustomInput ? (
+             <div className="grid grid-cols-2 gap-4">
+               <button onClick={() => handleActivitySelect('study', '讀書')} className="p-6 bg-zinc-800 rounded-2xl hover:bg-purple-600/20 hover:border-purple-500 border border-zinc-700 transition-all flex flex-col items-center gap-3 group">
+                 <BookOpen size={32} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                 <span className="font-bold text-zinc-200">讀書</span>
+               </button>
+               <button onClick={() => handleActivitySelect('sport', '運動')} className="p-6 bg-zinc-800 rounded-2xl hover:bg-emerald-600/20 hover:border-emerald-500 border border-zinc-700 transition-all flex flex-col items-center gap-3 group">
+                 <Dumbbell size={32} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                 <span className="font-bold text-zinc-200">運動</span>
+               </button>
+               <button onClick={() => handleActivitySelect('work', '工作')} className="p-6 bg-zinc-800 rounded-2xl hover:bg-blue-600/20 hover:border-blue-500 border border-zinc-700 transition-all flex flex-col items-center gap-3 group">
+                 <Briefcase size={32} className="text-blue-400 group-hover:scale-110 transition-transform" />
+                 <span className="font-bold text-zinc-200">工作</span>
+               </button>
+               <button onClick={() => handleActivitySelect('other', '')} className="p-6 bg-zinc-800 rounded-2xl hover:bg-orange-600/20 hover:border-orange-500 border border-zinc-700 transition-all flex flex-col items-center gap-3 group">
+                 <MoreHorizontal size={32} className="text-orange-400 group-hover:scale-110 transition-transform" />
+                 <span className="font-bold text-zinc-200">其他</span>
+               </button>
+             </div>
+           ) : (
+             <div className="animate-fadeIn">
+                <label className="text-sm text-zinc-400 mb-2 block">請輸入你想做的事情：</label>
+                <div className="flex gap-2">
+                  <input 
+                    value={customActivity}
+                    onChange={(e) => setCustomActivity(e.target.value)}
+                    className="flex-1 bg-zinc-800 text-white p-4 rounded-xl border border-zinc-700 focus:border-orange-500 focus:outline-none"
+                    placeholder="ex: 畫畫、寫作..."
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
+                  />
+                  <button onClick={handleCustomSubmit} className="bg-orange-600 text-white px-6 rounded-xl font-bold">OK</button>
+                </div>
+                <button onClick={() => setShowCustomInput(false)} className="mt-4 text-xs text-zinc-500 hover:text-white w-full text-center">
+                  返回選擇
+                </button>
+             </div>
+           )}
+         </div>
+      </div>
+    );
+  }
+
+  const questions = getQuestions();
+  // Since step 0 is selection, question index is step - 1
+  const currentQ = questions[step - 1]; 
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-6 animate-fadeIn">
+      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 p-8 rounded-3xl shadow-2xl">
+        <div className="mb-6">
+          <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Step {step}/{questions.length}</span>
+          <h2 className="text-2xl font-bold text-white mt-2">{currentQ.label}</h2>
+          <p className="text-zinc-400 text-sm mt-2">{currentQ.desc}</p>
+        </div>
+        
+        <input
+          type={currentQ.type || 'text'}
+          name={currentQ.key}
+          value={formData[currentQ.key]}
+          onChange={handleChange}
+          className="w-full bg-zinc-800 text-white p-4 rounded-xl border border-zinc-700 focus:border-purple-500 focus:outline-none transition-all text-lg mb-8"
+          placeholder={currentQ.placeholder}
+          autoFocus
+        />
+
+        <button 
+          onClick={nextStep}
+          disabled={!formData[currentQ.key]}
+          className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all ${
+            !formData[currentQ.key] 
+              ? 'bg-zinc-700 text-zinc-500 cursor-not-allowed' 
+              : 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:shadow-lg hover:shadow-purple-500/20'
+          }`}
+        >
+          {step === 4 ? '生成完美計畫' : '下一題'} <ChevronRight size={20} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// 2. Calculator Component
+const Calculator = () => {
+  const [display, setDisplay] = useState('0');
+  const [equation, setEquation] = useState('');
+
+  const handlePress = (val) => {
+    if (val === 'AC') {
+      setDisplay('0');
+      setEquation('');
+    } else if (val === '=') {
+      try {
+        // use new Function as a safer alternative to direct eval for simple math
+        // eslint-disable-next-line no-new-func
+        const res = new Function('return ' + equation + display)();
+        setDisplay(String(res).slice(0, 10));
+        setEquation('');
+      } catch {
+        setDisplay('Error');
+      }
+    } else if (['+', '-', '*', '/'].includes(val)) {
+      setEquation(equation + display + val);
+      setDisplay('0');
+    } else {
+      setDisplay(display === '0' ? val : display + val);
+    }
+  };
+
+  const btns = [
+    'AC', '/', '*', '-',
+    '7', '8', '9', '+',
+    '4', '5', '6', '=',
+    '1', '2', '3', '.',
+    '0'
+  ];
+
+  return (
+    <div className="bg-zinc-900 p-4 rounded-3xl h-full flex flex-col border border-zinc-800">
+      <div className="flex-1 flex flex-col justify-end items-end mb-4 px-2">
+        <div className="text-zinc-500 text-sm h-6">{equation}</div>
+        <div className="text-4xl font-mono text-white truncate w-full text-right">{display}</div>
+      </div>
+      <div className="grid grid-cols-4 gap-3">
+        {btns.map((b, i) => (
+          <button
+            key={i}
+            onClick={() => handlePress(b)}
+            className={`h-14 rounded-2xl font-bold text-lg transition-colors ${
+              b === '=' ? 'row-span-2 bg-purple-600 text-white' : 
+              ['AC', '+', '-', '*', '/'].includes(b) ? 'bg-zinc-700 text-purple-300' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+            } ${b === '0' ? 'col-span-2' : ''} ${b === '=' ? 'col-start-4 row-start-4 h-auto' : ''}`}
+          >
+            {b}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// 3. Dictionary/Translator Placeholder
+const Dictionary = () => {
+  const [word, setWord] = useState('');
+  const [result, setResult] = useState(null);
+
+  const handleSearch = () => {
+    if (!word) return;
+    // Simulating a lookup for UI demonstration
+    setResult({
+      word: word,
+      pos: 'n./v.',
+      def: '這是一個模擬的辭典功能。在實際開發中，這裡會連接 Google Translate API 或 Cambridge Dictionary API。',
+      example: 'Focus is the key to success.'
+    });
+  };
+
+  return (
+    <div className="bg-zinc-900 p-6 rounded-3xl h-full border border-zinc-800 flex flex-col">
+      <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+        <Languages className="text-purple-400" /> 快速翻譯
+      </h3>
+      <div className="relative">
+        <input
+          value={word}
+          onChange={(e) => setWord(e.target.value)}
+          className="w-full bg-zinc-800 text-white p-3 pr-10 rounded-xl border border-zinc-700 focus:outline-none focus:border-purple-500"
+          placeholder="輸入單字..."
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+        />
+        <button onClick={handleSearch} className="absolute right-3 top-3 text-zinc-400 hover:text-white">
+          <ChevronRight />
+        </button>
+      </div>
+
+      {result ? (
+        <div className="mt-6 animate-fadeIn">
+          <h2 className="text-3xl font-bold text-white">{result.word}</h2>
+          <span className="text-purple-400 italic text-sm">{result.pos}</span>
+          <p className="text-zinc-300 mt-2">{result.def}</p>
+          <div className="mt-4 p-3 bg-zinc-800/50 rounded-lg border-l-4 border-purple-500">
+            <p className="text-zinc-400 italic">"{result.example}"</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center text-zinc-600 text-center text-sm p-4">
+          不用跳出 App 就能查單字，<br/>減少分心機會。
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Main App Component ---
+
+export default function FocusFlowApp() {
+  const [onboarded, setOnboarded] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [schedule, setSchedule] = useState([]);
+  const [activeTab, setActiveTab] = useState('focus'); // focus, plan, tools, pet
+  const [activeTaskIndex, setActiveTaskIndex] = useState(0);
+  
+  // Timer State
+  const [timerType, setTimerType] = useState('countdown'); // 'countdown' | 'countup'
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [elapsedTime, setElapsedTime] = useState(0); // For countup mode
+  const [isRunning, setIsRunning] = useState(false);
+  const [mode, setMode] = useState('focus'); // focus, break
+  const [shameModal, setShameModal] = useState(false); // The anti-distraction modal
+
+  // Pet State
+  const [exp, setExp] = useState(0);
+  const [petStage, setPetStage] = useState('egg'); // egg, baby, child, master
+
+  // Visibility Logic (The "Lock" Feature)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isRunning) {
+        setIsRunning(false);
+        setShameModal(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isRunning, mode]);
+
+  // Timer Logic
+  useEffect(() => {
+    let interval = null;
+    if (isRunning) {
+      interval = setInterval(() => {
+        if (timerType === 'countdown') {
+          // Countdown Logic
+          if (timeLeft > 0) {
+            setTimeLeft((prev) => prev - 1);
+            if (mode === 'focus') setExp(prev => prev + 0.05); 
+          } else {
+            // Countdown Finished
+            setIsRunning(false);
+            if (mode === 'focus') {
+              setExp(prev => prev + 20);
+              alert("專注結束！這顆番茄是你的了。休息一下吧！");
+              setMode('break');
+              setTimeLeft(5 * 60);
+            } else {
+              alert("休息結束，回到戰場！");
+              setMode('focus');
+              setTimeLeft(profile?.focusTime * 60 || 25 * 60);
+            }
+          }
+        } else {
+          // Countup Logic
+          setElapsedTime(prev => prev + 1);
+          setExp(prev => prev + 0.05); // Still gain XP in countup
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, timeLeft, mode, profile, timerType]);
+
+  // Pet Evolution Logic
+  useEffect(() => {
+    if (exp < 30) setPetStage('egg');
+    else if (exp < 70) setPetStage('baby');
+    else if (exp < 100) setPetStage('child');
+    else setPetStage('master');
+  }, [exp]);
+
+  const handleOnboardingComplete = (data) => {
+    setProfile(data);
+    generateSchedule(data);
+    setOnboarded(true);
+    setTimeLeft(data.focusTime * 60);
+  };
+
+  const generateSchedule = (data) => {
+    // Sandwich Logic: Best -> Frustrated (Split) -> Worst -> Best
+    const tasks = [];
+    const focusTime = parseInt(data.focusTime);
+    
+    // Helper to check if subject is valid (not empty and not '無')
+    const isValid = (subject) => subject && subject.trim() !== '無';
+
+    // 1. Top Bun
+    if (isValid(data.bestSubject)) {
+      tasks.push({ subject: data.bestSubject, type: 'warmup', duration: 15, title: '暖身：進入狀態' });
+    }
+    
+    // 2. Meat (Hard stuff split up)
+    if (isValid(data.frustratedSubject)) {
+      tasks.push({ subject: data.frustratedSubject, type: 'hard', duration: focusTime, title: '挑戰：解決大魔王 Part 1' });
+      tasks.push({ subject: '休息', type: 'break', duration: 10, title: '中場休息' });
+      tasks.push({ subject: data.frustratedSubject, type: 'hard', duration: focusTime, title: '挑戰：解決大魔王 Part 2' });
+    }
+    
+    // 3. Cheese (Boring stuff)
+    if (isValid(data.worstSubject)) {
+      tasks.push({ subject: data.worstSubject, type: 'normal', duration: focusTime, title: '推進：解決無聊事項' });
+    }
+
+    // 4. Bottom Bun
+    if (isValid(data.bestSubject)) {
+      tasks.push({ subject: data.bestSubject, type: 'review', duration: 20, title: '收尾：快樂結束' });
+    }
+
+    // Fallback if user entered "無" for everything
+    if (tasks.length === 0) {
+      tasks.push({ subject: '自由安排', type: 'normal', duration: focusTime, title: '自由專注時間' });
+    }
+
+    setSchedule(tasks);
+  };
+
+  const formatTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getPetImage = () => {
+    switch(petStage) {
+      case 'egg': return '🥚';
+      case 'baby': return '🐣';
+      case 'child': return '🐥';
+      case 'master': return '🦅';
+      default: return '🥚';
+    }
+  };
+
+  const getPetName = () => {
+    switch(petStage) {
+      case 'egg': return '神秘的蛋';
+      case 'baby': return '剛孵化的小雞';
+      case 'child': return '好奇的小鳥';
+      case 'master': return '學霸老鷹';
+      default: return '';
+    }
+  };
+
+  const toggleTimerMode = (type) => {
+    setIsRunning(false);
+    setTimerType(type);
+    if (type === 'countdown') {
+      setTimeLeft(profile?.focusTime * 60 || 25 * 60);
+    } else {
+      setElapsedTime(0);
+    }
+  };
+
+  const handleReset = () => {
+    setIsRunning(false);
+    if (timerType === 'countdown') {
+      setTimeLeft(profile.focusTime * 60);
+      setMode('focus');
+    } else {
+      setElapsedTime(0);
+    }
+  };
+
+  // Logic for ring progress
+  const getProgressCircleProps = () => {
+    const radius = 130;
+    const circumference = 2 * Math.PI * radius;
+    let offset = 0;
+    
+    if (timerType === 'countdown') {
+      const totalTime = mode === 'focus' ? profile.focusTime * 60 : 300;
+      offset = circumference * (1 - timeLeft / totalTime);
+    } else {
+      // For countup, maybe just full circle or spinning? Let's do a 60 min lap loop
+      const loopTime = 3600; // 1 hour loop
+      offset = circumference * (1 - (elapsedTime % loopTime) / loopTime);
+    }
+    return { circumference, offset };
+  };
+
+  if (!onboarded) return <div className="h-screen bg-zinc-950 text-white font-sans"><Onboarding onComplete={handleOnboardingComplete} /></div>;
+
+  const { circumference, offset } = getProgressCircleProps();
+
+  return (
+    <div className="h-screen bg-zinc-950 text-white font-sans flex flex-col overflow-hidden relative selection:bg-purple-500/30">
+      
+      {/* Shame Modal for Focus Guard */}
+      {shameModal && (
+        <div className="absolute inset-0 z-50 bg-red-900/90 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center animate-bounce-in">
+          <AlertTriangle size={64} className="text-white mb-4" />
+          <h2 className="text-3xl font-black text-white mb-2">抓到了！你在偷懶？</h2>
+          <p className="text-white/80 mb-8 max-w-xs">只要離開這個畫面，計時器就會暫停。你的寵物蛋因為你的分心正在發抖！</p>
+          <button 
+            onClick={() => setShameModal(false)}
+            className="bg-white text-red-900 px-8 py-3 rounded-full font-bold shadow-xl hover:scale-105 transition-transform"
+          >
+            我錯了，回去讀書
+          </button>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto p-4 pb-24 max-w-2xl mx-auto w-full">
+        
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6 pt-2">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+              再讀五分鐘
+            </h1>
+            <p className="text-xs text-zinc-500 font-medium">FiveMoreMinutes • 你的高顏值{profile?.activityName || '讀書'}伴侶</p>
+          </div>
+          <div className="flex items-center gap-2 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
+            <span className="text-lg">{getPetImage()}</span>
+            <div className="w-16 h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500" 
+                style={{ width: `${Math.min(exp, 100)}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'focus' && (
+          <div className="flex flex-col items-center animate-fadeIn">
+            
+            {/* Timer Type Toggles */}
+            <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800 mb-8">
+              <button 
+                onClick={() => toggleTimerMode('countdown')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  timerType === 'countdown' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Timer size={14} /> 番茄鐘
+              </button>
+              <button 
+                onClick={() => toggleTimerMode('countup')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  timerType === 'countup' ? 'bg-zinc-800 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <Watch size={14} /> 正計時
+              </button>
+            </div>
+
+            {/* Timer Circle */}
+            <div className="relative w-72 h-72 mb-8 flex items-center justify-center">
+              <svg className="absolute w-full h-full transform -rotate-90">
+                <circle cx="144" cy="144" r="130" stroke="#27272a" strokeWidth="12" fill="none" />
+                <circle 
+                  cx="144" cy="144" r="130" 
+                  stroke={mode === 'focus' ? '#8b5cf6' : '#10b981'} 
+                  strokeWidth="12" 
+                  fill="none" 
+                  strokeDasharray={circumference}
+                  strokeDashoffset={offset}
+                  className="transition-all duration-1000 ease-linear"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="flex flex-col items-center">
+                <span className={`text-6xl font-mono font-bold tracking-tighter ${mode === 'focus' ? 'text-white' : 'text-emerald-400'}`}>
+                  {timerType === 'countdown' ? formatTime(timeLeft) : formatTime(elapsedTime)}
+                </span>
+                <span className="text-zinc-500 uppercase tracking-widest mt-2 text-sm">
+                  {timerType === 'countdown' 
+                    ? (mode === 'focus' ? '深度專注中' : '休息時間') 
+                    : '持續累積中'}
+                </span>
+              </div>
+            </div>
+
+            {/* Current Task Display (Conditional) */}
+            {timerType === 'countdown' ? (
+              <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl w-full mb-6 flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+                   <Brain size={20} />
+                 </div>
+                 <div className="flex-1">
+                   <p className="text-xs text-zinc-500">當前任務</p>
+                   <p className="font-bold text-lg text-white">{schedule[activeTaskIndex]?.title || '自由任務'}</p>
+                   <p className="text-sm text-zinc-400">{schedule[activeTaskIndex]?.subject}</p>
+                 </div>
+              </div>
+            ) : (
+              <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl w-full mb-6 flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                   <TrendingUp size={20} />
+                 </div>
+                 <div className="flex-1">
+                   <p className="text-xs text-zinc-500">當前模式</p>
+                   <p className="font-bold text-lg text-white">自由專注模式</p>
+                   <p className="text-sm text-zinc-400">無限制時間，依照自己的步調前進</p>
+                 </div>
+              </div>
+            )}
+
+            {/* Controls */}
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsRunning(!isRunning)}
+                className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 ${
+                  isRunning ? 'bg-zinc-800' : 'bg-white text-black'
+                }`}
+              >
+                {isRunning ? <Pause /> : <Play fill="currentColor" />}
+              </button>
+              <button 
+                onClick={handleReset}
+                className="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+              >
+                <RotateCcw />
+              </button>
+            </div>
+            
+            <p className="mt-8 text-xs text-zinc-600 text-center max-w-xs">
+              <Lock size={12} className="inline mr-1" />
+              專注模式已開啟：切換視窗將會中斷計時並扣除寵物經驗值。
+            </p>
+          </div>
+        )}
+
+        {activeTab === 'plan' && (
+          <div className="space-y-4 animate-fadeIn">
+            <h2 className="text-2xl font-bold mb-4">今日智能排程</h2>
+            {schedule.map((task, idx) => (
+              <div 
+                key={idx}
+                onClick={() => setActiveTaskIndex(idx)}
+                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${
+                  activeTaskIndex === idx 
+                    ? 'bg-purple-900/20 border-purple-500/50' 
+                    : 'bg-zinc-900 border-zinc-800 hover:bg-zinc-800'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                  activeTaskIndex === idx ? 'bg-purple-500 text-white' : 'bg-zinc-700 text-zinc-400'
+                }`}>
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <h3 className={`font-bold ${activeTaskIndex === idx ? 'text-purple-300' : 'text-zinc-300'}`}>
+                    {task.title}
+                  </h3>
+                  <div className="flex gap-2 text-xs mt-1">
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded text-zinc-400">{task.subject}</span>
+                    <span className="bg-zinc-800 px-2 py-0.5 rounded text-zinc-400">{task.duration} mins</span>
+                  </div>
+                </div>
+                {activeTaskIndex === idx && <div className="text-purple-500"><Play size={16} /></div>}
+              </div>
+            ))}
+            <button 
+              onClick={() => {
+                const newProfile = {...profile, bestSubject: profile.worstSubject, worstSubject: profile.bestSubject}; // Shuffle logic mock
+                generateSchedule(profile);
+              }}
+              className="w-full py-3 bg-zinc-800 rounded-xl text-zinc-400 text-sm mt-4 hover:bg-zinc-700 transition-colors"
+            >
+              重新生成計畫
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'tools' && (
+          <div className="grid grid-rows-2 gap-4 h-[calc(100vh-180px)] animate-fadeIn">
+            <Calculator />
+            <Dictionary />
+          </div>
+        )}
+
+        {activeTab === 'pet' && (
+          <div className="flex flex-col items-center justify-center h-full animate-fadeIn">
+            <div className="text-9xl mb-6 animate-bounce-slow filter drop-shadow-[0_0_30px_rgba(168,85,247,0.4)]">
+              {getPetImage()}
+            </div>
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-200 to-yellow-600 mb-2">
+              {getPetName()}
+            </h2>
+            <div className="bg-zinc-900 px-6 py-4 rounded-2xl border border-zinc-800 w-full max-w-xs">
+              <div className="flex justify-between text-sm text-zinc-400 mb-2">
+                <span>經驗值</span>
+                <span>{Math.floor(exp)} / 100</span>
+              </div>
+              <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500" 
+                  style={{ width: `${Math.min(exp, 100)}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-zinc-500 mt-4 text-center">
+                每完成 30% 獲得飼料 <br/>
+                每完成 70% 獲得進化石 <br/>
+                100% 解鎖神秘盲盒
+              </p>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950/80 backdrop-blur-md border-t border-zinc-800 p-2 safe-bottom">
+        <div className="max-w-md mx-auto flex justify-around items-center bg-zinc-900 rounded-2xl p-1 shadow-lg border border-zinc-800/50">
+          {[
+            { id: 'focus', icon: Brain, label: '專注' },
+            { id: 'plan', icon: BookOpen, label: '計畫' },
+            { id: 'tools', icon: CalcIcon, label: '工具' },
+            { id: 'pet', icon: Award, label: '寵物' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center justify-center w-full py-3 rounded-xl transition-all duration-300 ${
+                activeTab === tab.id 
+                  ? 'bg-zinc-800 text-purple-400 shadow-inner' 
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <tab.icon size={20} className={activeTab === tab.id ? 'mb-1' : ''} />
+              {activeTab === tab.id && <span className="text-[10px] font-bold">{tab.label}</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
