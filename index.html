@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyPal - 番茄鐘學習計時器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .timer-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .time {
+            font-size: 72px;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            font-size: 16px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: white;
+            color: #999;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .settings {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setting-group {
+            margin-bottom: 15px;
+        }
+
+        .setting-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            display: block;
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .setting-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        .toggle {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .time {
+                font-size: 48px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 StudyPal</h1>
+            <p>番茄鐘學習計時器</p>
+        </div>
+
+        <div class="success-message" id="successMsg">
+            恭喜！完成一個番茄鐘週期！休息一下吧 🎉
+        </div>
+
+        <div class="timer-display">
+            <div class="time" id="timeDisplay">25:00</div>
+            <div class="status" id="statusDisplay">就緒</div>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('study')">學習</button>
+            <button class="mode-btn" onclick="setMode('shortBreak')">短休息</button>
+            <button class="mode-btn" onclick="setMode('longBreak')">長休息</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="sessionsCount">0</div>
+                <div class="stat-label">完成次數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="minutesCount">0</div>
+                <div class="stat-label">總分鐘數</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="toggleTimer()">
+                <span id="toggleBtnText">開始</span>
+            </button>
+            <button class="btn btn-secondary" onclick="resetTimer()">重置</button>
+        </div>
+
+        <div class="settings">
+            <div class="setting-group">
+                <label class="setting-label">學習時間（分鐘）</label>
+                <input type="number" class="setting-input" id="studyTime" value="25" min="1" max="60" onchange="updateDuration()">
+            </div>
+            <div class="setting-group">
+                <label class="setting-label">短休息（分鐘）</label>
+                <input type="number" class="setting-input" id="shortBreakTime" value="5" min="1" max="30" onchange="updateDuration()">
+            </div>
+            <div class="setting-group">
+                <label class="setting-label">長休息（分鐘）</label>
+                <input type="number" class="setting-input" id="longBreakTime" value="15" min="1" max="60" onchange="updateDuration()">
+            </div>
+            <div class="setting-group">
+                <label class="setting-label toggle">
+                    <span>音效提醒</span>
+                    <label class="switch">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class StudyPalTimer {
+            constructor() {
+                this.mode = 'study';
+                this.isRunning = false;
+                this.timeRemaining = 25 * 60;
+                this.totalSeconds = 25 * 60;
+                this.timerInterval = null;
+                this.sessionsCompleted = 0;
+                this.totalMinutes = 0;
+                this.durations = {
+                    study: 25,
+                    shortBreak: 5,
+                    longBreak: 15
+                };
+                this.loadStats();
+            }
+
+            toggleTimer() {
+                if (this.isRunning) {
+                    this.pause();
+                } else {
+                    this.start();
+                }
+                this.updateUI();
+            }
+
+            start() {
+                if (this.isRunning) return;
+                this.isRunning = true;
+
+                this.timerInterval = setInterval(() => {
+                    this.timeRemaining--;
+                    this.updateDisplay();
+
+                    if (this.timeRemaining <= 0) {
+                        this.onTimerComplete();
+                    }
+                }, 1000);
+            }
+
+            pause() {
+                this.isRunning = false;
+                clearInterval(this.timerInterval);
+            }
+
+            reset() {
+                this.pause();
+                this.timeRemaining = this.totalSeconds;
+                this.updateDisplay();
+                this.updateUI();
+            }
+
+            setMode(mode) {
+                if (this.isRunning) return;
+                this.mode = mode;
+                this.totalSeconds = this.durations[mode] * 60;
+                this.timeRemaining = this.totalSeconds;
+                this.updateDisplay();
+                this.updateModeButtons();
+            }
+
+            updateDuration() {
+                const study = parseInt(document.getElementById('studyTime').value) || 25;
+                const shortBreak = parseInt(document.getElementById('shortBreakTime').value) || 5;
+                const longBreak = parseInt(document.getElementById('longBreakTime').value) || 15;
+
+                this.durations = { study, shortBreak, longBreak };
+                this.reset();
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.timeRemaining / 60);
+                const seconds = this.timeRemaining % 60;
+                document.getElementById('timeDisplay').textContent = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                const modeNames = {
+                    study: '學習中',
+                    shortBreak: '短休息',
+                    longBreak: '長休息'
+                };
+                document.getElementById('statusDisplay').textContent = 
+                    this.isRunning ? modeNames[this.mode] : '暫停';
+
+                document.title = `${minutes}:${String(seconds).padStart(2, '0')} - StudyPal`;
+            }
+
+            onTimerComplete() {
+                this.pause();
+                this.playSound();
+
+                if (this.mode === 'study') {
+                    this.sessionsCompleted++;
+                    this.totalMinutes += this.durations.study;
+                    this.saveStats();
+                    this.showSuccessMessage();
+                }
+
+                this.setMode(this.mode === 'study' ? 'shortBreak' : 'study');
+                this.updateUI();
+            }
+
+            playSound() {
+                const soundEnabled = document.getElementById('soundToggle').checked;
+                if (!soundEnabled) return;
+
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioContext.currentTime;
+                
+                for (let i = 0; i < 3; i++) {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.frequency.setValueAtTime(800, now + i * 0.2);
+                    osc.type = 'sine';
+                    
+                    gain.gain.setValueAtTime(0.3, now + i * 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.2 + 0.15);
+                    
+                    osc.start(now + i * 0.2);
+                    osc.stop(now + i * 0.2 + 0.15);
+                }
+            }
+
+            showSuccessMessage() {
+                const msg = document.getElementById('successMsg');
+                msg.classList.add('show');
+                setTimeout(() => msg.classList.remove('show'), 3000);
+            }
+
+            updateUI() {
+                document.getElementById('toggleBtnText').textContent = 
+                    this.isRunning ? '暫停' : '開始';
+                document.getElementById('sessionsCount').textContent = this.sessionsCompleted;
+                document.getElementById('minutesCount').textContent = this.totalMinutes;
+            }
+
+            updateModeButtons() {
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                const modeMap = { study: 0, shortBreak: 1, longBreak: 2 };
+                document.querySelectorAll('.mode-btn')[modeMap[this.mode]].classList.add('active');
+            }
+
+            saveStats() {
+                localStorage.setItem('studypal-sessions', this.sessionsCompleted);
+                localStorage.setItem('studypal-minutes', this.totalMinutes);
+            }
+
+            loadStats() {
+                this.sessionsCompleted = parseInt(localStorage.getItem('studypal-sessions')) || 0;
+                this.totalMinutes = parseInt(localStorage.getItem('studypal-minutes')) || 0;
+                this.updateUI();
+            }
+        }
+
+        // 初始化
+        let timer;
+        window.addEventListener('DOMContentLoaded', () => {
+            timer = new StudyPalTimer();
+            timer.updateDisplay();
+        });
+
+        // 全局函數
+        function toggleTimer() { timer.toggleTimer(); }
+        function resetTimer() { timer.reset(); }
+        function setMode(mode) { timer.setMode(mode); }
+        function updateDuration() { timer.updateDuration(); }
+
+        // 頁面關閉時保存進度
+        window.addEventListener('beforeunload', () => {
+            if (timer.isRunning) {
+                timer.saveStats();
+            }
+        });
+    </script>
+</body>
+</html>
